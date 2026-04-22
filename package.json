@@ -2,14 +2,14 @@
   "publisher": "theores",
   "name": "commit-message-generator-ai",
   "displayName": "Commit Message Generator (AI)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "packageManager": "pnpm@10.17.1",
   "description": "AI-powered git commit message generator",
   "l10n": "./l10n",
   "extensionDependencies": [
     "vscode.git"
   ],
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "homepage": "https://github.com/theores/commit-message-generator#readme",
   "repository": {
     "type": "git",
