@@ -1,0 +1,27 @@
+{
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://github.com/joygqz/commit-message-generator#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joygqz/commit-message-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joygqz/commit-message-generator/issues"
+  },
+  "keywords": [
+    "git",
+    "commit",
+    "commit message",
+    "generator",
+    "ai",
+    "deepseek",
+    "openai",
+    "conventional commits",
+    "productivity"
+  ],
+  "categories": [
+    "SCM Providers",
+    "AI",
+    "Other"
+  ]
+}

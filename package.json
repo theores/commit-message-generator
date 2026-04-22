@@ -1,0 +1,202 @@
+{
+  "publisher": "joygqz",
+  "name": "commit-message-generator",
+  "displayName": "Commit Message Generator",
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.17.1",
+  "description": "AI-powered git commit message generator",
+  "l10n": "./l10n",
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://github.com/joygqz/commit-message-generator#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joygqz/commit-message-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joygqz/commit-message-generator/issues"
+  },
+  "keywords": [
+    "git",
+    "commit",
+    "commit message",
+    "generator",
+    "ai",
+    "deepseek",
+    "openai",
+    "conventional commits",
+    "productivity"
+  ],
+  "categories": [
+    "SCM Providers",
+    "AI",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "./images/logo.png",
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "dist/*",
+    "images/*",
+    "l10n/*.json",
+    "package.nls*.json"
+  ],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "category": "Commit Message Generator",
+        "command": "commit-message-generator.generateCommit",
+        "title": "%command.generateCommit.title%",
+        "icon": {
+          "light": "images/logo.svg",
+          "dark": "images/logo.svg"
+        }
+      },
+      {
+        "category": "Commit Message Generator",
+        "command": "commit-message-generator.stopGeneration",
+        "title": "%command.stopGeneration.title%",
+        "icon": "$(primitive-square)"
+      },
+      {
+        "category": "Commit Message Generator",
+        "command": "commit-message-generator.selectAvailableModel",
+        "title": "%command.selectAvailableModel.title%"
+      },
+      {
+        "category": "Commit Message Generator",
+        "command": "commit-message-generator.showTokenStats",
+        "title": "%command.showTokenStats.title%"
+      },
+      {
+        "category": "Commit Message Generator",
+        "command": "commit-message-generator.resetTokenStats",
+        "title": "%command.resetTokenStats.title%"
+      }
+    ],
+    "configuration": {
+      "title": "Commit Message Generator",
+      "properties": {
+        "commit-message-generator.service.baseURL": {
+          "default": "https://api.deepseek.com",
+          "markdownDescription": "%configuration.service.baseURL.description%",
+          "type": "string",
+          "order": 0
+        },
+        "commit-message-generator.service.apiKey": {
+          "default": "",
+          "markdownDescription": "%configuration.service.apiKey.description%",
+          "type": "string",
+          "order": 1
+        },
+        "commit-message-generator.service.model": {
+          "default": "deepseek-chat",
+          "markdownDescription": "%configuration.service.model.description%",
+          "type": "string",
+          "order": 2
+        },
+        "commit-message-generator.format.outputLanguage": {
+          "default": "简体中文",
+          "markdownDescription": "%configuration.format.outputLanguage.description%",
+          "enum": [
+            "简体中文",
+            "繁體中文",
+            "にほんご",
+            "한국어",
+            "česky",
+            "Deutsch",
+            "française",
+            "italiano",
+            "Nederlands",
+            "português",
+            "tiếng Việt",
+            "English",
+            "español",
+            "Svenska",
+            "русский",
+            "bahasa",
+            "Polski",
+            "Türkçe",
+            "ไทย"
+          ],
+          "type": "string",
+          "order": 10
+        },
+        "commit-message-generator.commit.autoStage": {
+          "default": false,
+          "markdownDescription": "%configuration.commit.autoStage.description%",
+          "type": "boolean",
+          "order": 29
+        },
+        "commit-message-generator.commit.enableEmojiPrefix": {
+          "default": false,
+          "markdownDescription": "%configuration.commit.enableEmojiPrefix.description%",
+          "type": "boolean",
+          "order": 30
+        },
+        "commit-message-generator.commit.customPrompt": {
+          "default": "",
+          "markdownDescription": "%configuration.commit.customPrompt.description%",
+          "type": "string",
+          "editPresentation": "multilineText",
+          "order": 31
+        }
+      }
+    },
+    "menus": {
+      "scm/title": [
+        {
+          "command": "commit-message-generator.generateCommit",
+          "group": "navigation",
+          "when": "scmProvider === git && !commit-message-generator.isGenerating"
+        },
+        {
+          "command": "commit-message-generator.stopGeneration",
+          "group": "navigation",
+          "when": "scmProvider === git && commit-message-generator.isGenerating"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "sync-pkg": "node scripts/sync-package.js",
+    "package": "pnpm run sync-pkg && pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "compile": "pnpm run sync-pkg && pnpm run check-types && pnpm run lint && node esbuild.js",
+    "l10n": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint .",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "ext:package": "vsce package",
+    "ext:publish": "vsce publish",
+    "release": "bumpp -x \"pnpm run changelog\" -a"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.4.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "~22.18.8",
+    "@types/vscode": "^1.75.0",
+    "@vscode/l10n-dev": "^0.0.35",
+    "@vscode/vsce": "^3.6.2",
+    "bumpp": "^10.2.3",
+    "conventional-changelog-cli": "^5.0.0",
+    "esbuild": "^0.25.10",
+    "eslint": "^9.37.0",
+    "npm-run-all": "^4.1.5",
+    "openai": "^6.1.0",
+    "simple-git": "^3.28.0",
+    "typescript": "^5.9.3"
+  }
+}
