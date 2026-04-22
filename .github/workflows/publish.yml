@@ -2,8 +2,8 @@ name: Publish Extension
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 jobs:
   publish:
@@ -13,32 +13,50 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version has been updated
+        id: check
+        uses: EndBug/version-check@v2
+        with:
+          file-name: package.json
 
       - name: Install pnpm
+        if: steps.check.outputs.changed == 'true'
         uses: pnpm/action-setup@v4
 
       - name: Install Node.js
+        if: steps.check.outputs.changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: 'pnpm'
 
       - name: Install dependencies
+        if: steps.check.outputs.changed == 'true'
         run: pnpm install
 
-      - name: Build and Package
+      - name: Compile and Package
+        if: steps.check.outputs.changed == 'true'
         run: |
           pnpm run compile
           npx vsce package -o extension.vsix
 
-      - name: Create GitHub Release
+      - name: Create Release
+        if: steps.check.outputs.changed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: extension.vsix
+          tag_name: v${{ steps.check.outputs.version }}
+          name: v${{ steps.check.outputs.version }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Open VSX
-        run: npx ovsx publish extension.vsix -p ${{ secrets.OVSX_PAT }}
+        if: steps.check.outputs.changed == 'true'
+        run: pnpm exec ovsx publish extension.vsix -p ${{ secrets.OVSX_PAT }}
+        continue-on-error: true
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
