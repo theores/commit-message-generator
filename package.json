@@ -1,6 +1,6 @@
 {
   "publisher": "theores",
-  "name": "commit-message-generator-vsc",
+  "name": "commit-message-generator-ai",
   "displayName": "Commit Message Generator ®",
   "version": "1.0.0",
   "packageManager": "pnpm@10.17.1",
