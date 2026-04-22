@@ -13,6 +13,7 @@ function sync() {
   const newPkg = {
     ...base,
     ...metadata,
+    version: pkg.version, // 保留原有的版本号
     contributes,
     scripts: pkg.scripts,
     devDependencies: pkg.devDependencies,
