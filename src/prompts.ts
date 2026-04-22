@@ -1,6 +1,5 @@
 import type { ChatCompletionMessageParam } from 'openai/resources'
 import { config } from './utils/config'
-import { COMMIT_FORMAT } from './utils/constants'
 
 /**
  * 生成 commit 消息提示词
@@ -15,86 +14,68 @@ export async function generateCommitPrompt(
 
   const trimmedDiff = diff.trim() || '[empty diff provided]'
 
-  // 构建语言提示
-  const isChinese = formatConfig.outputLanguage.includes('中文')
-  const languageNote = isChinese ? ' 请在中文与英文或数字之间保留空格。' : ''
-
-  // 构建提交类型列表
+  // 构建提交类型说明（仅作为 AI 参考，如果用户有自定义模板则优先遵循模板）
   const commitTypes = [
-    { type: 'feat', description: 'new feature', emoji: '✨' },
-    { type: 'fix', description: 'bug fix', emoji: '🐛' },
-    { type: 'docs', description: 'documentation', emoji: '📚' },
-    { type: 'style', description: 'formatting / code style', emoji: '💄' },
-    { type: 'refactor', description: 'code refactoring', emoji: '♻️' },
-    { type: 'perf', description: 'performance improvement', emoji: '⚡' },
-    { type: 'test', description: 'testing', emoji: '✅' },
-    { type: 'build', description: 'build system', emoji: '📦' },
-    { type: 'ci', description: 'CI configuration', emoji: '👷' },
-    { type: 'chore', description: 'maintenance', emoji: '🔧' },
-    { type: 'revert', description: 'revert previous commit', emoji: '⏪' },
+    { type: 'feat', description: 'new feature' },
+    { type: 'fix', description: 'bug fix' },
+    { type: 'docs', description: 'documentation' },
+    { type: 'style', description: 'formatting / code style' },
+    { type: 'refactor', description: 'code refactoring' },
+    { type: 'perf', description: 'performance improvement' },
+    { type: 'test', description: 'testing' },
+    { type: 'build', description: 'build system' },
+    { type: 'ci', description: 'CI configuration' },
+    { type: 'chore', description: 'maintenance' },
+    { type: 'revert', description: 'revert previous commit' },
   ]
 
   const commitTypesList = commitTypes
-    .map(({ type, description, emoji }) => {
-      const prefix = commitConfig.enableEmojiPrefix ? `${emoji} ` : ''
-      return `  - ${prefix}${type}: ${description}`
-    })
+    .map(({ type, description }) => `  - ${type}: ${description}`)
     .join('\n')
 
-  const emojiInstruction = commitConfig.enableEmojiPrefix
-    ? 'Prefix the subject with the matching emoji from the list above.'
-    : 'Do not prefix the subject with emojis.'
-
-  // 自定义提示
+  const userTemplate = commitConfig.template.trim()
   const commitCustomPrompt = commitConfig.customPrompt.trim()
 
   const systemContent = `You are a professional git commit message generator.
-Your task is to generate a concise and descriptive commit message based on the provided git diff.
+Your task is to generate a professional, concise and descriptive commit message based on the provided git diff.
+You MUST analyze ALL changed files in the diff and summarize the key changes for each relevant part.
 
-CRITICAL: The output MUST be in ${formatConfig.outputLanguage}.${languageNote} ONLY technical terms (commit types like feat/fix, code identifiers, file paths) remain in English.
-
-## Rules for Generate Commit Message
+## Commit Message Standards
 
 Format: type(scope): subject
 
-Subject line rules:
-- Follow Conventional Commits specification
-- Structure: type(scope): subject
-- Supported types:
+Allowed Types:
 ${commitTypesList}
-- ${emojiInstruction}
-- Use imperative mood (e.g., "add" not "added" or "adds")
-- Max ${COMMIT_FORMAT.MAX_SUBJECT_LENGTH} characters
-- No period at the end
-- Lowercase first letter after colon
-- Be specific and concise about WHAT changed
-- Write in ${formatConfig.outputLanguage}
 
-Body rules (optional, add only when needed):
-- Separate from subject with ONE blank line
-- MUST use bullet point format: each line starts with "- "
-- Wrap at ${COMMIT_FORMAT.MAX_BODY_LINE_LENGTH} characters per line
-- Explain WHY the change was made, not HOW
-- Include context, motivation, or consequences
-- Write in ${formatConfig.outputLanguage}
+Subject line rules:
+- Follow Conventional Commits specification.
+- Use imperative mood (e.g., "add" not "added").
+- Max 72 characters.
+- Lowercase first letter after colon.
 
-When to include body:
-- Complex changes needing explanation
-- Breaking changes (BREAKING CHANGE: ...)
-- Multiple related changes
-- Important context or reasoning
+Body rules:
+- Use bullet point format: each line starts with "- ".
+- Explain WHY the change was made, not HOW.
 
-When to skip body:
-- Simple, self-explanatory changes
-- Single-line fixes
-- Trivial updates${commitCustomPrompt
+${userTemplate
+  ? `## CUSTOM TEMPLATE
+You MUST follow this template strictly:
+${userTemplate}
+(Note: Replace variables like {type}, {scope}, {subject} with actual content)`
+  : ''}
+${commitCustomPrompt
   ? `
-
-Additional commit guidance:
+## ADDITIONAL CONSTRAINTS
 ${commitCustomPrompt}`
   : ''}
 
-Return ONLY the commit message text. No markdown fences, no extra explanation.`
+## CRITICAL LANGUAGE REQUIREMENT (MANDATORY)
+1. ALL human-readable text (subject descriptions, body summaries, explanations) MUST be written in **${formatConfig.outputLanguage}**.
+2. DO NOT use English unless it is a code identifier (function name, variable) or file path.
+3. If the user set language to "${formatConfig.outputLanguage}", you are FORBIDDEN from outputting in any other language.
+4. Translate every single word of your summary into **${formatConfig.outputLanguage}**.
+
+Return ONLY the commit message text. No markdown fences, no conversational filler.`
 
   return [
     {

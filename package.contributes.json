@@ -4,10 +4,7 @@
       "category": "Commit Message Generator",
       "command": "commit-message-generator.generateCommit",
       "title": "%command.generateCommit.title%",
-      "icon": {
-        "light": "images/logo.svg",
-        "dark": "images/logo.svg"
-      }
+      "icon": "$(sparkle)"
     },
     {
       "category": "Commit Message Generator",
@@ -85,10 +82,11 @@
         "type": "boolean",
         "order": 29
       },
-      "commit-message-generator.commit.enableEmojiPrefix": {
-        "default": false,
-        "markdownDescription": "%configuration.commit.enableEmojiPrefix.description%",
-        "type": "boolean",
+      "commit-message-generator.commit.template": {
+        "default": "",
+        "markdownDescription": "%configuration.commit.template.description%",
+        "type": "string",
+        "editPresentation": "multilineText",
         "order": 30
       },
       "commit-message-generator.commit.customPrompt": {
@@ -104,12 +102,12 @@
     "scm/title": [
       {
         "command": "commit-message-generator.generateCommit",
-        "group": "navigation",
+        "group": "navigation@1",
         "when": "scmProvider === git && !commit-message-generator.isGenerating"
       },
       {
         "command": "commit-message-generator.stopGeneration",
-        "group": "navigation",
+        "group": "navigation@1",
         "when": "scmProvider === git && commit-message-generator.isGenerating"
       }
     ]

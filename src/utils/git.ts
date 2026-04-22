@@ -99,3 +99,39 @@ export async function getDiffStaged(repo: GitRepository): Promise<string> {
 
   return diff || ''
 }
+
+/**
+ * 获取工作区的 diff（未暂存）
+ * @param repo Git 仓库实例
+ * @returns 未暂存的 diff 内容
+ */
+export async function getDiff(repo: GitRepository): Promise<string> {
+  const rootPath = repo.rootUri.fsPath
+  const git = simpleGit(rootPath)
+  const diff = await git.diff()
+
+  return diff || ''
+}
+
+/**
+ * 检查仓库是否存在冲突或正在合并
+ * @param repo Git 仓库实例
+ * @returns 冲突状态信息，null 表示无冲突
+ */
+export async function checkConflicts(repo: GitRepository): Promise<string | null> {
+  const rootPath = repo.rootUri.fsPath
+  const git = simpleGit(rootPath)
+  const status = await git.status()
+
+  if (status.conflicted.length > 0) {
+    return l10n.t('There are unresolved conflicts. Please resolve them first.')
+  }
+
+  // 检查是否在合并中（通常通过 .git/MERGE_HEAD 存在与否判断，或者 status 包含相关信息）
+  const mergeHeadPath = `${rootPath}/.git/MERGE_HEAD`
+  if (fs.existsSync(mergeHeadPath)) {
+    return l10n.t('Merge in progress. Please finish the merge before generating a commit message.')
+  }
+
+  return null
+}

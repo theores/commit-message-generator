@@ -3,7 +3,7 @@ import { generateCommitPrompt } from './prompts'
 import { AbortManager } from './utils/abort-manager'
 import { config } from './utils/config'
 import { getUserFriendlyErrorMessage, shouldSilenceError } from './utils/error-handler'
-import { getDiffStaged, getRepo, stageAll } from './utils/git'
+import { checkConflicts, getDiff, getDiffStaged, getRepo, stageAll } from './utils/git'
 import { logger, validateConfig } from './utils/index'
 import { ChatGPTStreamAPI, getAvailableModels } from './utils/openai'
 import { tokenTracker } from './utils/token-tracker'
@@ -18,6 +18,9 @@ const abortManager = new AbortManager()
  * @param context SCM 上下文或其他触发对象
  */
 async function generateCommit(context?: any) {
+  // 立即终止之前的任何待处理请求，防止内容重叠
+  abortManager.abortAll()
+
   const controller = abortManager.createController()
 
   // 开始一个新的 token 统计会话
@@ -33,13 +36,25 @@ async function generateCommit(context?: any) {
       { key: 'service.model', required: true, errorMessage: l10n.t('Model is required. Please configure it in settings.') },
     ])
     if (!validation.isValid) {
-      window.showErrorMessage(validation.error!)
+      const action = l10n.t('Go to Settings')
+      window.showErrorMessage(validation.error!, action).then((selection) => {
+        if (selection === action) {
+          commands.executeCommand('workbench.action.openSettings', 'commit-message-generator')
+        }
+      })
       return
     }
 
     // 获取仓库
     const repo = await getRepo(context)
     const commitConfig = config.getCommitConfig()
+
+    // 检查冲突/合并状态
+    const conflictMessage = await checkConflicts(repo)
+    if (conflictMessage) {
+      window.showErrorMessage(conflictMessage)
+      return
+    }
 
     // 自动暂存逻辑
     if (commitConfig.autoStage) {
@@ -48,14 +63,21 @@ async function generateCommit(context?: any) {
     }
 
     // 获取暂存区的 diff
-    const diff = await getDiffStaged(repo)
+    let diff = await getDiffStaged(repo)
+
+    // 如果暂存区为空，尝试获取工作区的 diff
     if (!diff) {
-      logger.info('No staged changes found')
-      window.showInformationMessage(l10n.t('No staged changes to commit.'))
+      logger.info('No staged changes found, checking unstaged changes...')
+      diff = await getDiff(repo)
+    }
+
+    if (!diff) {
+      logger.info('No changes found in workspace')
+      window.showInformationMessage(l10n.t('No changes to commit.'))
       return
     }
 
-    logger.debug('Retrieved staged changes', { diffLength: diff.length })
+    logger.debug('Retrieved diff content', { diffLength: diff.length })
 
     // 获取 SCM 输入框
     const scmInputBox = repo.inputBox
@@ -79,6 +101,11 @@ async function generateCommit(context?: any) {
       },
       { signal: controller.signal },
     )
+
+    // 确保最终内容完全同步（防止流式输出可能漏掉的最后一个 chunk）
+    if (apiResult.content && scmInputBox.value !== apiResult.content) {
+      scmInputBox.value = apiResult.content
+    }
 
     // 记录 token 使用信息
     if (apiResult.usage) {
@@ -124,7 +151,12 @@ async function selectAvailableModel() {
       { key: 'service.baseURL', required: true, errorMessage: l10n.t('Base URL is required. Please configure it in settings.') },
     ])
     if (!validation.isValid) {
-      window.showErrorMessage(validation.error!)
+      const action = l10n.t('Go to Settings')
+      window.showErrorMessage(validation.error!, action).then((selection) => {
+        if (selection === action) {
+          commands.executeCommand('workbench.action.openSettings', 'commit-message-generator')
+        }
+      })
       return
     }
 

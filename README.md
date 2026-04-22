@@ -11,8 +11,8 @@
 
 - **流式填充**：AI 生成内容实时填入 SCM 输入框，支持 ⏹ 随时中断。
 - **深度解析**：分析暂存区 Diff 意图，支持多文件、多行变更的逻辑汇总。
-- **自动暂存**：支持配置 `autoStage`。开启后，点击生成图标将自动执行 `git add .`，无需手动点击暂存按钮。
-- **高度定制**：内置 19+ 语言支持，可选 Emoji 前缀，支持自定义 System Prompt。
+- **自动暂存**：支持配置 `autoStage`。开启后，点击生成图标将自动执行 `git add .`。
+- **高度定制**：内置 19+ 语言支持，支持**自定义日志模板**及额外的生成指令。
 - **多工作区**：完美支持 Multi-root Workspaces，自动识别操作仓库。
 - **Token 追踪**：内置消耗统计，支持实时查看及历史累计数据。
 
@@ -38,8 +38,8 @@
 | `service.model` | `deepseek-chat` | 推荐通过“选择可用模型”命令动态拉取并切换。 |
 | `format.outputLanguage` | `简体中文` | 生成提交信息的语言（支持 19+ 种）。 |
 | `commit.autoStage` | `false` | **强烈推荐**。开启后，点击 ✨ 图标前无需手动暂存更改。 |
-| `commit.enableEmojiPrefix` | `false` | 是否在提交类型前添加图标（如 ✨ feat, 🐛 fix）。 |
-| `commit.customPrompt` | `""` | 额外的 AI 生成指令。例如：“强制包含 Jira ID”。 |
+| `commit.template` | `""` | 自定义提交日志模板。支持 `{type}`, `{scope}`, `{subject}` 变量。 |
+| `commit.customPrompt` | `""` | 额外的 AI 生成指令。例如：“遵循团队特定的提交规范”。 |
 
 ## 📜 许可证
 

@@ -4,11 +4,11 @@
   "command.selectAvailableModel.title": "选择可用模型",
   "command.showTokenStats.title": "显示 Token 使用统计",
   "command.resetTokenStats.title": "重置 Token 使用统计",
-  "configuration.service.apiKey.description": "用于 AI 服务提供商身份验证的 API 密钥。",
-  "configuration.service.baseURL.description": "AI 服务 API 端点的基础 URL。",
-  "configuration.service.model.description": "用于生成提交信息的 AI 模型。运行 [Commit Message Generator: 选择可用模型](command:commit-message-generator.selectAvailableModel) 从可用选项中选择。",
-  "configuration.format.outputLanguage.description": "所有 AI 生成内容的语言（提交信息）。",
+  "configuration.service.apiKey.description": "用于 AI 服务提供商身份验证的 API 密钥。\n\n例如：sk-xxxxxxxxxxxxxxxx",
+  "configuration.service.baseURL.description": "AI 服务 API 端点的基础 URL。\n\n例如：https://api.deepseek.com",
+  "configuration.service.model.description": "用于生成提交信息的 AI 模型。[浏览当前所有可用模型](command:commit-message-generator.selectAvailableModel)",
+  "configuration.format.outputLanguage.description": "所有 AI 生成内容的语言。",
   "configuration.commit.autoStage.description": "在生成提交日志前，自动暂存所有更改 (git add .)。",
-  "configuration.commit.enableEmojiPrefix.description": "在提交信息类型前添加表情符号（如 ✨ feat, 🐛 fix）。",
-  "configuration.commit.customPrompt.description": "追加到提交信息生成系统消息的自定义提示语。例如：强制包含 Jira 工单号、使用特定的提交格式、遵循团队规范等。"
+  "configuration.commit.template.description": "自定义提交日志模板。如果为空，将使用默认的 [Conventional Commits](https://www.conventionalcommits.org/) 规范。\n\n例如：{type}({scope}): {subject}",
+  "configuration.commit.customPrompt.description": "额外的提交日志生成指令，用于自定义复杂的规范或约束。\n\n例如：强制包含 Jira 编号、使用特定的提交格式、遵循团队规范等"
 }

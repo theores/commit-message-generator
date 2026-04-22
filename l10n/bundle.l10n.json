@@ -30,5 +30,9 @@
   "Network error. Please check your internet connection and base URL configuration.": "Network error. Please check your internet connection and base URL configuration.",
   "Invalid request. Please check your configuration or try again.": "Invalid request. Please check your configuration or try again.",
   "Server error. The API service may be temporarily unavailable. Please try again later.": "Server error. The API service may be temporarily unavailable. Please try again later.",
-  "An unexpected error occurred.": "An unexpected error occurred."
+  "An unexpected error occurred.": "An unexpected error occurred.",
+  "Go to Settings": "Go to Settings",
+  "There are unresolved conflicts. Please resolve them first.": "There are unresolved conflicts. Please resolve them first.",
+  "Merge in progress. Please finish the merge before generating a commit message.": "Merge in progress. Please finish the merge before generating a commit message.",
+  "No changes to commit.": "No changes to commit."
 }

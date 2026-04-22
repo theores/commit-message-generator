@@ -23,8 +23,8 @@ export interface FormatConfig {
 export interface CommitConfig {
   /** 是否自动暂存所有更改 */
   autoStage: boolean
-  /** 是否在提交类型前添加表情符号 */
-  enableEmojiPrefix: boolean
+  /** 自定义日志模板 */
+  template: string
   /** 额外的自定义生成提示语 */
   customPrompt: string
 }
@@ -82,7 +82,7 @@ class ConfigManager {
   getCommitConfig(): CommitConfig {
     return {
       autoStage: this.get<boolean>('commit.autoStage', false),
-      enableEmojiPrefix: this.get<boolean>('commit.enableEmojiPrefix', false),
+      template: this.get<string>('commit.template', ''),
       customPrompt: this.get<string>('commit.customPrompt', ''),
     }
   }

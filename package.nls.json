@@ -4,11 +4,11 @@
   "command.selectAvailableModel.title": "Select Available Model",
   "command.showTokenStats.title": "Show Token Usage Statistics",
   "command.resetTokenStats.title": "Reset Token Usage Statistics",
-  "configuration.service.apiKey.description": "API key for authentication with your AI service provider.",
-  "configuration.service.baseURL.description": "Base URL of the AI service API endpoint.",
-  "configuration.service.model.description": "AI model to use for generating commit messages. Run [Commit Message Generator: Select Available Model](command:commit-message-generator.selectAvailableModel) to choose from available options.",
-  "configuration.format.outputLanguage.description": "Language for all AI-generated content (commit messages).",
-  "configuration.commit.autoStage.description": "Automatically stage all changes (git add .) before generating the commit message.",
-  "configuration.commit.enableEmojiPrefix.description": "Add emoji prefix before commit type (e.g., ✨ feat, 🐛 fix).",
-  "configuration.commit.customPrompt.description": "Custom prompt to append to the commit message generation system message. Examples: enforce Jira ticket numbers, use specific format, follow team conventions."
+  "configuration.service.apiKey.description": "API key for authentication with your AI service provider.\n\neg: sk-xxxxxxxxxxxxxxxx",
+  "configuration.service.baseURL.description": "Base URL of the AI service API endpoint.\n\neg: https://api.deepseek.com",
+  "configuration.service.model.description": "AI model for generating commit messages. [Browse all available models](command:commit-message-generator.selectAvailableModel)",
+  "configuration.format.outputLanguage.description": "Language for all AI-generated content.",
+  "configuration.commit.autoStage.description": "Automatically stage all changes (git add .) before generating messages.",
+  "configuration.commit.template.description": "Custom template for the commit message. If empty, the default [Conventional Commits](https://www.conventionalcommits.org/) format will be used.\n\neg: {type}({scope}): {subject}",
+  "configuration.commit.customPrompt.description": "Additional generation instructions for custom commit conventions or constraints.\n\neg: enforce Jira ticket numbers, use specific format, follow team conventions"
 }

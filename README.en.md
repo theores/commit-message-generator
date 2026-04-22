@@ -11,8 +11,8 @@ AI-powered VS Code extension that analyzes Git diffs and generates structured co
 
 - **Streaming Output**: Real-time message filling into SCM input with ⏹ instant abort support.
 - **Deep Analysis**: Intent-aware Diff analysis, summarizing multi-file and multi-line changes.
-- **Auto-Staging**: Support for `autoStage`. When enabled, clicking the ✨ icon will automatically run `git add .`, eliminating the need for manual staging.
-- **High Customization**: 19+ languages supported, optional Emoji prefixes, and custom System Prompts.
+- **Auto-Staging**: Support for `autoStage`. When enabled, clicking the ✨ icon will automatically run `git add .`.
+- **High Customization**: 19+ languages supported, support for **custom commit templates** and additional instructions.
 - **Multi-root Support**: Seamlessly handles Multi-root Workspaces by identifying the active repository.
 - **Token Tracking**: Built-in usage statistics for both current operations and historical totals.
 
@@ -38,7 +38,7 @@ Search for `commit-message-generator` in VS Code settings:
 | `service.model` | `deepseek-chat` | Use "Select Available Model" command to switch. |
 | `format.outputLanguage` | `简体中文` | Target language for generated messages. |
 | `commit.autoStage` | `false` | **Highly Recommended**. Automatically stage all changes before generation. |
-| `commit.enableEmojiPrefix` | `false` | Add semantic icons (e.g., ✨ feat, 🐛 fix). |
+| `commit.template` | `""` | Custom commit message template. Supports `{type}`, `{scope}`, `{subject}`. |
 | `commit.customPrompt` | `""` | Additional instructions for AI generation. |
 
 ## 📜 License
