@@ -15,48 +15,62 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0 # 拉取完整历史，防止版本对比报错
 
       - name: Check if version has been updated
         id: check
+        if: github.event_name == 'push'
         uses: EndBug/version-check@v2
         with:
           file-name: package.json
 
+      # 设定一个变量来决定是否发布，并提取当前版本号
+      - name: Prepare publish info
+        id: prep
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "${{ steps.check.outputs.changed }}" == "true" ]; then
+            echo "publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "publish=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install pnpm
-        if: steps.check.outputs.changed == 'true'
+        if: steps.prep.outputs.publish == 'true'
         uses: pnpm/action-setup@v4
 
       - name: Install Node.js
-        if: steps.check.outputs.changed == 'true'
+        if: steps.prep.outputs.publish == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: 'pnpm'
 
       - name: Install dependencies
-        if: steps.check.outputs.changed == 'true'
+        if: steps.prep.outputs.publish == 'true'
         run: pnpm install
 
       - name: Compile and Package
-        if: steps.check.outputs.changed == 'true'
+        if: steps.prep.outputs.publish == 'true'
         run: |
           pnpm run compile
           npx vsce package -o extension.vsix
 
       - name: Create Release
-        if: steps.check.outputs.changed == 'true'
+        if: steps.prep.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: extension.vsix
-          tag_name: v${{ steps.check.outputs.version }}
-          name: v${{ steps.check.outputs.version }}
+          tag_name: v${{ steps.prep.outputs.version }}
+          name: v${{ steps.prep.outputs.version }}
           generate_release_notes: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Open VSX
-        if: steps.check.outputs.changed == 'true'
+        if: steps.prep.outputs.publish == 'true'
         run: pnpm exec ovsx publish extension.vsix -p ${{ secrets.OVSX_PAT }}
         continue-on-error: true
         env:
