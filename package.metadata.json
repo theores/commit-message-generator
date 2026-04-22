@@ -1,12 +1,12 @@
 {
   "license": "SEE LICENSE IN LICENSE",
-  "homepage": "https://github.com/joygqz/commit-message-generator#readme",
+  "homepage": "https://github.com/theores/commit-message-generator#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joygqz/commit-message-generator.git"
+    "url": "https://github.com/theores/commit-message-generator.git"
   },
   "bugs": {
-    "url": "https://github.com/joygqz/commit-message-generator/issues"
+    "url": "https://github.com/theores/commit-message-generator/issues"
   },
   "keywords": [
     "git",

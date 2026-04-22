@@ -1,5 +1,5 @@
 {
-  "publisher": "joygqz",
+  "publisher": "theores",
   "name": "commit-message-generator",
   "displayName": "Commit Message Generator",
   "version": "1.0.0",
@@ -10,13 +10,13 @@
     "vscode.git"
   ],
   "license": "SEE LICENSE IN LICENSE",
-  "homepage": "https://github.com/joygqz/commit-message-generator#readme",
+  "homepage": "https://github.com/theores/commit-message-generator#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joygqz/commit-message-generator.git"
+    "url": "https://github.com/theores/commit-message-generator.git"
   },
   "bugs": {
-    "url": "https://github.com/joygqz/commit-message-generator/issues"
+    "url": "https://github.com/theores/commit-message-generator/issues"
   },
   "keywords": [
     "git",
@@ -39,6 +39,7 @@
   "files": [
     "CHANGELOG.md",
     "LICENSE",
+    "README*.md",
     "dist/*",
     "images/*",
     "l10n/*.json",

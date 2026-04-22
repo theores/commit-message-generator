@@ -1,67 +1,46 @@
 # Commit Message Generator
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/joygqz/commit-message-generator?style=flat-square)](https://github.com/joygqz/commit-message-generator)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/joygqz.commit-message-generator?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=joygqz.commit-message-generator)
+[English](./README.en.md) | 简体中文
 
-AI 驱动的 Git 提交消息生成器，专注、纯粹、高效。
+![Version](https://img.shields.io/visual-studio-marketplace/v/theores.commit-message-generator?style=flat-square)
+![Downloads](https://img.shields.io/visual-studio-marketplace/d/theores.commit-message-generator?style=flat-square)
 
-## ✨ 特性
+基于 AI 的 VS Code Git 提交日志生成工具，深度解析代码变更，自动生成符合 Conventional Commits 规范的描述。
 
-- 🤖 **AI 驱动** - 兼容 OpenAI、DeepSeek 等 OpenAI 兼容 API
-- ⚡ **实时生成** - 流式生成提交消息，支持随时取消
-- 📦 **自动暂存** - 支持生成前自动执行 `git add .`
-- 🌐 **多语言** - 支持 19+ 种语言生成符合规范的提交消息
-- 🎨 **高度自定义** - 支持 Emoji、自定义提示词、模型切换
-- 📊 **使用统计** - 内置 Token 使用统计与追踪
+## ✨ 核心特性
 
-## 🚀 快速开始
+- **流式填充**：AI 生成内容实时填入 SCM 输入框，支持 ⏹ 随时中断。
+- **深度解析**：分析暂存区 Diff 意图，支持多文件、多行变更的逻辑汇总。
+- **自动暂存**：支持配置 `autoStage`。开启后，点击生成图标将自动执行 `git add .`，无需手动点击暂存按钮。
+- **高度定制**：内置 19+ 语言支持，可选 Emoji 前缀，支持自定义 System Prompt。
+- **多工作区**：完美支持 Multi-root Workspaces，自动识别操作仓库。
+- **Token 追踪**：内置消耗统计，支持实时查看及历史累计数据。
 
-1. 从 [VS Code 市场](https://marketplace.visualstudio.com/items?itemName=joygqz.commit-message-generator) 安装
-2. 配置 API（设置）：
-   - `commit-message-generator.service.apiKey` - 你的 API 密钥
-   - `commit-message-generator.service.baseURL` - API 端点（默认：`https://api.deepseek.com`）
-3. 选择模型：运行 `Commit Message Generator: 选择可用模型`
-4. 暂存更改并点击源代码管理面板标题栏的 ✨ 图标
+## 🚀 快速上手
 
-## 📋 使用方法
+1. **安装**：在 VS Code 市场搜索并安装 `Commit Message Generator`。
+2. **配置**：
+   - 设置 `service.apiKey`
+   - 设置 `service.baseURL` (默认为 DeepSeek)
+3. **生成日志**：
+   - **方式 A (默认)**：在 SCM 面板点击 `+` 号**暂存**更改，然后点击标题栏的 ✨ 图标。
+   - **方式 B (推荐)**：开启 `commit.autoStage` 配置。你只需修改代码，然后**直接点击 ✨ 图标**，插件会自动为你完成暂存并生成日志。
+4. **提交**：核对 AI 生成的内容并提交。
 
-1. **暂存更改**：在 VS Code 源代码管理面板中暂存你的代码改动。
-2. **生成消息**：点击标题栏的 ✨ 图标，AI 将根据 diff 内容实时生成提交消息。
-3. **停止生成**：如果需要中断，点击 ⏹ 图标即可停止，并保留已生成的内容。
-4. **提交代码**：核对消息后，直接在 SCM 面板完成提交。
+## ⚙️ 配置说明
 
-**主要命令：**
+在 VS Code 设置中搜索 `commit-message-generator` 即可配置：
 
-- `Commit Message Generator: 生成提交日志` - 分析暂存更改并生成消息
-- `Commit Message Generator: 选择可用模型` - 浏览和切换 AI 模型
-- `Commit Message Generator: 显示 Token 使用统计` - 查看 Token 使用历史
-- `Commit Message Generator: 重置 Token 使用统计` - 清空统计数据
+| 配置项 | 默认值 | 说明 |
+| :--- | :--- | :--- |
+| `service.apiKey` | `""` | **必需**。你的 AI 服务 API 密钥。 |
+| `service.baseURL` | `DeepSeek API` | 兼容 OpenAI 格式的端点。 |
+| `service.model` | `deepseek-chat` | 推荐通过“选择可用模型”命令动态拉取并切换。 |
+| `format.outputLanguage` | `简体中文` | 生成提交信息的语言（支持 19+ 种）。 |
+| `commit.autoStage` | `false` | **强烈推荐**。开启后，点击 ✨ 图标前无需手动暂存更改。 |
+| `commit.enableEmojiPrefix` | `false` | 是否在提交类型前添加图标（如 ✨ feat, 🐛 fix）。 |
+| `commit.customPrompt` | `""` | 额外的 AI 生成指令。例如：“强制包含 Jira ID”。 |
 
-## ⚙️ 配置
+## 📜 许可证
 
-### 必需设置
-
-```jsonc
-{
-  "commit-message-generator.service.apiKey": "sk-...", // 你的 API 密钥
-  "commit-message-generator.service.baseURL": "https://api.deepseek.com", // API 端点
-  "commit-message-generator.service.model": "deepseek-chat" // 模型名称
-}
-```
-
-### 可选设置
-
-- `commit.autoStage` - 是否在生成前自动暂存所有更改 (git add .)
-- `commit.enableEmojiPrefix` - 在提交类型前添加表情符号（如 ✨ feat）
-- `commit.customPrompt` - 追加到 AI 系统提示词中的自定义指令
-- `format.outputLanguage` - 消息生成的语言（默认：简体中文）
-
-## 🌍 支持的语言
-
-English, 简体中文, 繁體中文, 日本語, 한국어, Deutsch, Français, Italiano, Nederlands, Português, Tiếng Việt, Español, Svenska, Русский, Bahasa, Polski, Türkçe, ไทย, Čeština
-
-## 💖 支持
-
-如果这个项目对你的工作流程有帮助，可以考虑支持作者：
-
-[![赞助](https://img.shields.io/badge/Sponsor-Support_Author-946ce6?style=for-the-badge&logo=github-sponsors)](https://afdian.com/a/joygqz)
+[MIT License](LICENSE) © 2026 theores

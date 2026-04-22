@@ -1,5 +1,5 @@
 {
-  "publisher": "joygqz",
+  "publisher": "theores",
   "name": "commit-message-generator",
   "displayName": "Commit Message Generator",
   "version": "1.0.0",
@@ -10,6 +10,7 @@
   "files": [
     "CHANGELOG.md",
     "LICENSE",
+    "README*.md",
     "dist/*",
     "images/*",
     "l10n/*.json",
