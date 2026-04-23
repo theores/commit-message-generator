@@ -5,5 +5,6 @@ export default antfu({
     '.github/**',
     'dist/**',
     'out/**',
+    'LATEST_CHANGELOG.md',
   ],
 })
