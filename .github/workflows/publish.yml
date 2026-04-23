@@ -15,14 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 拉取完整历史，这对于生成 Changelog 至关重要
-
-      - name: Check if version has been updated
-        id: check
-        if: github.event_name == 'push'
-        uses: EndBug/version-check@v2
-        with:
-          file-name: package.json
+          fetch-depth: 0 # 拉取完整历史，用于检查 Tag 和生成日志
 
       # 设定一个变量来决定是否发布，并提取当前版本号
       - name: Prepare publish info
@@ -30,7 +23,18 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "${{ steps.check.outputs.changed }}" == "true" ]; then
+          
+          # 检查当前版本号是否已经有对应的 Git Tag
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists."
+            TAG_EXISTS=true
+          else
+            echo "Tag v$VERSION does not exist."
+            TAG_EXISTS=false
+          fi
+
+          # 逻辑：如果是手动触发 OR 标签不存在 (说明是新版本)
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "$TAG_EXISTS" == "false" ]; then
             echo "publish=true" >> $GITHUB_OUTPUT
           else
             echo "publish=false" >> $GITHUB_OUTPUT
@@ -78,7 +82,7 @@ jobs:
           tag_name: v${{ steps.prep.outputs.version }}
           name: v${{ steps.prep.outputs.version }}
           body: ${{ steps.changelog.outputs.body }}
-          generate_release_notes: false # 既然我们自己生成了，就不再用 GitHub 默认的了
+          generate_release_notes: false
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
