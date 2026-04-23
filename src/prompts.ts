@@ -69,11 +69,11 @@ ${commitCustomPrompt
 ${commitCustomPrompt}`
   : ''}
 
-## CRITICAL LANGUAGE REQUIREMENT (MANDATORY)
-1. ALL human-readable text (subject descriptions, body summaries, explanations) MUST be written in **${formatConfig.outputLanguage}**.
-2. DO NOT use English unless it is a code identifier (function name, variable) or file path.
-3. If the user set language to "${formatConfig.outputLanguage}", you are FORBIDDEN from outputting in any other language.
-4. Translate every single word of your summary into **${formatConfig.outputLanguage}**.
+## CRITICAL RULES
+1. **CONVENTIONAL COMMITS SPEC**: The `type` and `scope` MUST follow the specification using **technical identifiers in English** (e.g., `feat(ui)`, `fix(core)`). Never translate these technical terms.
+2. **LANGUAGE FOR DESCRIPTIONS**: All descriptive parts (the `subject` after the colon, and the `body` bullet points) MUST be written in **${formatConfig.outputLanguage}**.
+3. **DO NOT EXPLAIN**: Output ONLY the final commit message.
+4. **THOROUGH ANALYSIS**: Ensure every significant change in the diff is reflected in the body.
 
 Return ONLY the commit message text. No markdown fences, no conversational filler.`
 

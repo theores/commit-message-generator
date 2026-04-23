@@ -2,7 +2,7 @@
   "publisher": "theores",
   "name": "commit-message-generator-ai",
   "displayName": "Commit Message Generator (AI)",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "packageManager": "pnpm@10.17.1",
   "description": "AI-powered git commit message generator",
   "l10n": "./l10n",
@@ -63,7 +63,7 @@
         "category": "Commit Message Generator",
         "command": "commit-message-generator.stopGeneration",
         "title": "%command.stopGeneration.title%",
-        "icon": "$(primitive-square)"
+        "icon": "$(debug-stop)"
       },
       {
         "category": "Commit Message Generator",

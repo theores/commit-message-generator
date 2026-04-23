@@ -94,10 +94,16 @@ async function generateCommit(context?: any) {
     const prompts = await generateCommitPrompt(diff)
 
     // 执行流式生成
+    let generatedText = ''
     const apiResult = await ChatGPTStreamAPI(
       prompts,
       (chunk) => {
-        scmInputBox.value += chunk
+        // 关键修复：如果当前任务已被取消，严禁更新 UI
+        if (controller.signal.aborted) {
+          return
+        }
+        generatedText += chunk
+        scmInputBox.value = generatedText
       },
       { signal: controller.signal },
     )
