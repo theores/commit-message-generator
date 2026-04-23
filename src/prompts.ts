@@ -70,8 +70,8 @@ ${commitCustomPrompt}`
   : ''}
 
 ## CRITICAL RULES
-1. **CONVENTIONAL COMMITS SPEC**: The `type` and `scope` MUST follow the specification using **technical identifiers in English** (e.g., `feat(ui)`, `fix(core)`). Never translate these technical terms.
-2. **LANGUAGE FOR DESCRIPTIONS**: All descriptive parts (the `subject` after the colon, and the `body` bullet points) MUST be written in **${formatConfig.outputLanguage}**.
+1. **CONVENTIONAL COMMITS SPEC**: The \`type\` and \`scope\` MUST follow the specification using **technical identifiers in English** (e.g., \`feat(ui)\`, \`fix(core)\`). Never translate these technical terms.
+2. **LANGUAGE FOR DESCRIPTIONS**: All descriptive parts (the \`subject\` after the colon, and the \`body\` bullet points) MUST be written in **${formatConfig.outputLanguage}**.
 3. **DO NOT EXPLAIN**: Output ONLY the final commit message.
 4. **THOROUGH ANALYSIS**: Ensure every significant change in the diff is reflected in the body.
 
