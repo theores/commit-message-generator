@@ -10,12 +10,12 @@
   "Please select a model to generate commit messages.": "Please select a model to generate commit messages.",
   "Model updated to {0}.": "Model updated to {0}.",
   "No usage records": "No usage records",
-  "Current Operation": "Current Operation",
-  "Total Tokens: {0}": "Total Tokens: {0}",
-  "Prompt Tokens: {0}": "Prompt Tokens: {0}",
-  "Completion Tokens: {0}": "Completion Tokens: {0}",
+  "Last Operation": "Last Operation",
+  "Total Tokens": "Total Tokens",
+  "Prompt Tokens": "Prompt Tokens",
+  "Completion Tokens": "Completion Tokens",
   "Cumulative Statistics": "Cumulative Statistics",
-  "Total Operations: {0}": "Total Operations: {0}",
+  "Total Operations": "Total Operations",
   "Usage Statistics": "Usage Statistics",
   "Are you sure you want to reset all Token usage statistics?": "Are you sure you want to reset all Token usage statistics?",
   "Reset": "Reset",
@@ -34,5 +34,8 @@
   "Go to Settings": "Go to Settings",
   "There are unresolved conflicts. Please resolve them first.": "There are unresolved conflicts. Please resolve them first.",
   "Merge in progress. Please finish the merge before generating a commit message.": "Merge in progress. Please finish the merge before generating a commit message.",
-  "No changes to commit.": "No changes to commit."
+  "No changes to commit.": "No changes to commit.",
+  "Copy": "Copy",
+  "OK": "OK",
+  "Statistics copied to clipboard": "Statistics copied to clipboard"
 }

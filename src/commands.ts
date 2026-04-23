@@ -1,4 +1,4 @@
-import { commands, ConfigurationTarget, l10n, window } from 'vscode'
+import { commands, ConfigurationTarget, env, l10n, window } from 'vscode'
 import { generateCommitPrompt } from './prompts'
 import { AbortManager } from './utils/abort-manager'
 import { config } from './utils/config'
@@ -208,23 +208,40 @@ async function showTokenStats() {
       return
     }
 
-    const items: any[] = []
+    const items: string[] = []
     if (currentStats) {
       items.push(
-        { label: l10n.t('Current Operation'), kind: -1 }, // Separator
-        { label: l10n.t('Total Tokens: {0}', currentStats.totalTokens) },
-        { label: l10n.t('Prompt Tokens: {0}', currentStats.promptTokens) },
-        { label: l10n.t('Completion Tokens: {0}', currentStats.completionTokens) },
+        `【${l10n.t('Last Operation')}】`,
+        `${l10n.t('Total Tokens')}: ${currentStats.totalTokens}`,
+        `${l10n.t('Prompt Tokens')}: ${currentStats.promptTokens}`,
+        `${l10n.t('Completion Tokens')}: ${currentStats.completionTokens}`,
+        '',
       )
     }
 
     items.push(
-      { label: l10n.t('Cumulative Statistics'), kind: -1 },
-      { label: l10n.t('Total Operations: {0}', historicalStats.operationCount) },
-      { label: l10n.t('Total Tokens: {0}', historicalStats.totalTokens) },
+      `【 ${l10n.t('Cumulative Statistics')}】`,
+      `${l10n.t('Total Operations')}: ${historicalStats.operationCount}`,
+      `${l10n.t('Total Tokens')}: ${historicalStats.totalTokens}`,
     )
 
-    await window.showQuickPick(items, { title: l10n.t('Usage Statistics') })
+    const message = items.join('\n')
+    const copyLabel = l10n.t('Copy')
+    const okLabel = l10n.t('OK')
+
+    // 使用 MessageItem 对象并设置 isCloseAffordance 为 true，
+    // 这样 VS Code 就不会再额外添加一个“取消”按钮了。
+    const selection = await window.showInformationMessage<{ title: string, isCloseAffordance?: boolean }>(
+      message,
+      { modal: true },
+      { title: copyLabel },
+      { title: okLabel, isCloseAffordance: true },
+    )
+
+    if (selection?.title === copyLabel) {
+      await env.clipboard.writeText(message)
+      window.showInformationMessage(l10n.t('Statistics copied to clipboard'))
+    }
   }
   catch (error: unknown) {
     logger.error('Failed to show token stats', error)

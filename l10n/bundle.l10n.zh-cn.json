@@ -10,12 +10,12 @@
   "Please select a model to generate commit messages.": "请选择一个模型来生成提交信息。",
   "Model updated to {0}.": "模型已更新为 {0}。",
   "No usage records": "暂无使用记录",
-  "Current Operation": "本次操作",
-  "Total Tokens: {0}": "总计 Token：{0}",
-  "Prompt Tokens: {0}": "提示词 Token：{0}",
-  "Completion Tokens: {0}": "生成 Token：{0}",
+  "Last Operation": "最近一次操作",
+  "Total Tokens": "总计 Token",
+  "Prompt Tokens": "提示词 Token",
+  "Completion Tokens": "生成 Token",
   "Cumulative Statistics": "累计统计",
-  "Total Operations: {0}": "总操作次数：{0}",
+  "Total Operations": "总操作次数",
   "Usage Statistics": "使用统计",
   "Are you sure you want to reset all Token usage statistics?": "确定要重置所有 Token 使用统计吗？",
   "Reset": "重置",
@@ -34,5 +34,8 @@
   "Go to Settings": "去设置",
   "There are unresolved conflicts. Please resolve them first.": "存在未解决的冲突，请先处理冲突。",
   "Merge in progress. Please finish the merge before generating a commit message.": "项目正在合并中，请在合并完成后再试。",
-  "No changes to commit.": "没有检测到任何代码变更。"
+  "No changes to commit.": "没有检测到任何代码变更。",
+  "Copy": "复制",
+  "OK": "确定",
+  "Statistics copied to clipboard": "统计信息已复制到剪贴板"
 }

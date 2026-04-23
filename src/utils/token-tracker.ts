@@ -34,12 +34,13 @@ interface PersistedData {
   totalPromptTokens: number
   totalCachedTokens: number
   operationCount: number
+  lastUsage?: TokenUsage | null
 }
 
 /**
  * 当前数据版本号
  */
-const DATA_VERSION = 2
+const DATA_VERSION = 3
 
 /**
  * 存储键名
@@ -116,6 +117,9 @@ class TokenTracker {
       if (typeof data.operationCount === 'number' && data.operationCount >= 0) {
         this.operationCount = data.operationCount
       }
+      if (data.lastUsage) {
+        this.lastUsage = data.lastUsage
+      }
 
       logger.debug('Loaded token tracker data', {
         totalTokens: this.totalTokens,
@@ -142,6 +146,7 @@ class TokenTracker {
         totalPromptTokens: this.totalPromptTokens,
         totalCachedTokens: this.totalCachedTokens,
         operationCount: this.operationCount,
+        lastUsage: this.lastUsage,
       }
 
       await this.context.globalState.update(STORAGE_KEY, data)
