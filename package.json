@@ -2,7 +2,7 @@
   "publisher": "theores",
   "name": "commit-message-generator-ai",
   "displayName": "Commit Message Generator (AI)",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "packageManager": "pnpm@10.17.1",
   "description": "AI-powered git commit message generator",
   "l10n": "./l10n",
