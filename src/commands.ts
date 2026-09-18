@@ -1,7 +1,12 @@
-import { commands, ConfigurationTarget, env, l10n, window } from 'vscode'
+import type { CancellationToken, Progress } from 'vscode'
+import type { GitRepository, RepoContext } from './utils/git'
+import { commands, ConfigurationTarget, env, l10n, ProgressLocation, window } from 'vscode'
 import { generateCommitPrompt } from './prompts'
 import { AbortManager } from './utils/abort-manager'
+import { sanitizeCommitMessage } from './utils/commit-message'
 import { config } from './utils/config'
+import { CONTEXT_KEYS } from './utils/constants'
+import { prepareDiff } from './utils/diff'
 import { getUserFriendlyErrorMessage, shouldSilenceError } from './utils/error-handler'
 import { checkConflicts, getDiff, getDiffStaged, getRepo, stageAll } from './utils/git'
 import { logger, validateConfig } from './utils/index'
@@ -17,17 +22,44 @@ const abortManager = new AbortManager()
  * 生成 commit 消息命令
  * @param context SCM 上下文或其他触发对象
  */
-async function generateCommit(context?: any) {
+async function generateCommit(context?: RepoContext) {
+  if (!config.getUiConfig().showProgress) {
+    return runGenerateCommit(context)
+  }
+
+  return window.withProgress(
+    {
+      location: ProgressLocation.Notification,
+      title: l10n.t('Generating commit message'),
+      cancellable: true,
+    },
+    (progress, token) => runGenerateCommit(context, progress, token),
+  )
+}
+
+async function runGenerateCommit(
+  context?: RepoContext,
+  progress?: Progress<{ message?: string, increment?: number }>,
+  cancellationToken?: CancellationToken,
+) {
   // 立即终止之前的任何待处理请求，防止内容重叠
   abortManager.abortAll()
 
   const controller = abortManager.createController()
-
-  // 开始一个新的 token 统计会话
+  const cancellationDisposable = cancellationToken?.onCancellationRequested(() => controller.abort())
+  let generatingRepositoryUri = context?.rootUri?.toString()
+  let generatingStatePromise: Thenable<unknown> = generatingRepositoryUri
+    ? commands.executeCommand('setContext', CONTEXT_KEYS.GENERATING_REPOSITORY_URIS, [generatingRepositoryUri])
+    : Promise.resolve()
   tokenTracker.startSession()
+  let scmInputBox: GitRepository['inputBox']
+  let originalInput = ''
+  let generationCompleted = false
+  let updateTimer: ReturnType<typeof setTimeout> | undefined
 
   try {
     logger.info('Starting commit generation workflow')
+    progress?.report({ message: l10n.t('Preparing generation...'), increment: 5 })
 
     // 验证配置
     const validation = validateConfig([
@@ -45,30 +77,47 @@ async function generateCommit(context?: any) {
       return
     }
 
-    // 获取仓库
+    progress?.report({ message: l10n.t('Checking Git repository...'), increment: 10 })
     const repo = await getRepo(context)
+    const resolvedRepositoryUri = repo.rootUri.toString()
+    if (resolvedRepositoryUri !== generatingRepositoryUri) {
+      generatingRepositoryUri = resolvedRepositoryUri
+      generatingStatePromise = commands.executeCommand(
+        'setContext',
+        CONTEXT_KEYS.GENERATING_REPOSITORY_URIS,
+        [generatingRepositoryUri],
+      )
+    }
     const commitConfig = config.getCommitConfig()
+    progress?.report({ message: l10n.t('Collecting code changes...'), increment: 15 })
 
-    // 检查冲突/合并状态
-    const conflictMessage = await checkConflicts(repo)
+    let conflictMessage: string | null
+    let diff: string
+
+    if (commitConfig.autoStage) {
+      conflictMessage = await checkConflicts(repo)
+      if (!conflictMessage) {
+        logger.info('Auto-staging changes...')
+        await stageAll(repo)
+      }
+      diff = conflictMessage ? '' : await getDiffStaged(repo)
+    }
+    else {
+      [conflictMessage, diff] = await Promise.all([
+        checkConflicts(repo),
+        getDiffStaged(repo),
+      ])
+    }
+
     if (conflictMessage) {
       window.showErrorMessage(conflictMessage)
       return
     }
 
-    // 自动暂存逻辑
-    if (commitConfig.autoStage) {
-      logger.info('Auto-staging changes...')
-      await stageAll(repo)
-    }
-
-    // 获取暂存区的 diff
-    let diff = await getDiffStaged(repo)
-
     // 如果暂存区为空，尝试获取工作区的 diff
     if (!diff) {
       logger.info('No staged changes found, checking unstaged changes...')
-      diff = await getDiff(repo)
+      diff = await getDiff(repo, commitConfig.maxDiffLength)
     }
 
     if (!diff) {
@@ -77,40 +126,64 @@ async function generateCommit(context?: any) {
       return
     }
 
-    logger.debug('Retrieved diff content', { diffLength: diff.length })
+    const preparedDiff = prepareDiff(diff, commitConfig.maxDiffLength)
+    diff = preparedDiff.content
+
+    if (preparedDiff.truncated) {
+      window.showWarningMessage(l10n.t('The diff was truncated to {0} characters to improve speed and avoid exceeding the model context limit.', commitConfig.maxDiffLength))
+    }
+
+    progress?.report({ message: l10n.t('Preparing AI request...'), increment: 20 })
 
     // 获取 SCM 输入框
-    const scmInputBox = repo.inputBox
+    scmInputBox = repo.inputBox
     if (!scmInputBox) {
       throw new Error(l10n.t('Unable to find SCM input box.'))
     }
+    originalInput = scmInputBox.value
 
-    // 设置正在生成的上下文（切换图标）
-    await commands.executeCommand('setContext', 'commit-message-generator.isGenerating', true)
-
-    // 清空输入框以便流式填入（可选，或者在末尾追加）
-    scmInputBox.value = ''
-
-    const prompts = await generateCommitPrompt(diff)
+    const prompts = generateCommitPrompt(diff)
+    progress?.report({ message: l10n.t('Waiting for AI service...'), increment: 20 })
 
     // 执行流式生成
     let generatedText = ''
+    let receivedFirstChunk = false
+    const flushGeneratedText = () => {
+      updateTimer = undefined
+      if (abortManager.isCurrent(controller) && !controller.signal.aborted) {
+        scmInputBox!.value = generatedText
+      }
+    }
     const apiResult = await ChatGPTStreamAPI(
       prompts,
       (chunk) => {
-        // 关键修复：如果当前任务已被取消，严禁更新 UI
-        if (controller.signal.aborted) {
+        if (!abortManager.isCurrent(controller) || controller.signal.aborted) {
           return
         }
         generatedText += chunk
-        scmInputBox.value = generatedText
+        if (!receivedFirstChunk) {
+          receivedFirstChunk = true
+          progress?.report({ message: l10n.t('Generating commit message...'), increment: 20 })
+        }
+        if (!updateTimer) {
+          updateTimer = setTimeout(flushGeneratedText, 40)
+        }
       },
       { signal: controller.signal },
     )
 
-    // 确保最终内容完全同步（防止流式输出可能漏掉的最后一个 chunk）
-    if (apiResult.content && scmInputBox.value !== apiResult.content) {
-      scmInputBox.value = apiResult.content
+    if (updateTimer) {
+      clearTimeout(updateTimer)
+      updateTimer = undefined
+    }
+
+    if (!abortManager.isCurrent(controller) || controller.signal.aborted) {
+      return
+    }
+
+    const finalContent = sanitizeCommitMessage(apiResult.content)
+    if (finalContent) {
+      scmInputBox.value = finalContent
     }
 
     // 记录 token 使用信息
@@ -118,9 +191,15 @@ async function generateCommit(context?: any) {
       tokenTracker.updateUsage(apiResult.usage)
     }
 
+    generationCompleted = true
+    progress?.report({ message: l10n.t('Generation complete'), increment: 10 })
     logger.info('Commit message generated successfully')
   }
   catch (error: unknown) {
+    if (abortManager.isCurrent(controller) && scmInputBox && !generationCompleted) {
+      scmInputBox.value = originalInput
+    }
+
     if (shouldSilenceError(error)) {
       logger.info('Generation cancelled by user')
       return
@@ -130,10 +209,17 @@ async function generateCommit(context?: any) {
     window.showErrorMessage(getUserFriendlyErrorMessage(error))
   }
   finally {
-    // 重置状态
-    await commands.executeCommand('setContext', 'commit-message-generator.isGenerating', false)
-    tokenTracker.endSession()
-    abortManager.clear(controller)
+    cancellationDisposable?.dispose()
+    if (updateTimer) {
+      clearTimeout(updateTimer)
+    }
+
+    if (abortManager.complete(controller)) {
+      tokenTracker.endSession()
+      await Promise.resolve(generatingStatePromise)
+        .catch((error: unknown) => logger.warn('Failed to set generation context', error))
+      await commands.executeCommand('setContext', CONTEXT_KEYS.GENERATING_REPOSITORY_URIS, [])
+    }
   }
 }
 

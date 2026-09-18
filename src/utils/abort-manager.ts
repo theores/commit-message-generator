@@ -23,17 +23,19 @@ export class AbortManager {
   abortAll(): void {
     if (this.currentController) {
       this.currentController.abort()
-      this.currentController = null
     }
   }
 
-  /**
-   * 清理当前的 controller
-   * @param controller 要清理的 controller，只有当它是当前 controller 时才清理
-   */
-  clear(controller: AbortController): void {
-    if (this.currentController === controller) {
-      this.currentController = null
+  isCurrent(controller: AbortController): boolean {
+    return this.currentController === controller
+  }
+
+  complete(controller: AbortController): boolean {
+    if (this.currentController !== controller) {
+      return false
     }
+
+    this.currentController = null
+    return true
   }
 }

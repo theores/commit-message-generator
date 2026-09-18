@@ -37,5 +37,18 @@
   "No changes to commit.": "没有检测到任何代码变更。",
   "Copy": "复制",
   "OK": "确定",
-  "Statistics copied to clipboard": "统计信息已复制到剪贴板"
+  "Statistics copied to clipboard": "统计信息已复制到剪贴板",
+  "Select Git Repository": "选择 Git 仓库",
+  "Select the repository whose changes should be analyzed.": "请选择要分析其变更的仓库。",
+  "Repository selection was cancelled.": "已取消选择仓库。",
+  "The diff was truncated to {0} characters to improve speed and avoid exceeding the model context limit.": "为提升速度并避免超出模型上下文限制，Diff 已截断为 {0} 个字符。",
+  "Error details: {0}": "错误详情：{0}",
+  "Generating commit message": "正在生成提交信息",
+  "Preparing generation...": "正在准备生成...",
+  "Checking Git repository...": "正在检查 Git 仓库...",
+  "Collecting code changes...": "正在收集代码变更...",
+  "Preparing AI request...": "正在准备 AI 请求...",
+  "Waiting for AI service...": "正在等待 AI 服务...",
+  "Generating commit message...": "正在生成提交信息...",
+  "Generation complete": "生成完成"
 }

@@ -23,6 +23,36 @@ interface ErrorInfo {
   originalError?: unknown
 }
 
+interface DetailedError extends Error {
+  status?: number
+  code?: string
+  type?: string
+  request_id?: string
+  requestId?: string
+}
+
+function getErrorDetails(error: Error): string {
+  const detailedError = error as DetailedError
+  const details = [
+    detailedError.status ? `HTTP ${detailedError.status}` : '',
+    detailedError.code ? `code=${detailedError.code}` : '',
+    detailedError.type ? `type=${detailedError.type}` : '',
+    detailedError.request_id || detailedError.requestId
+      ? `requestId=${detailedError.request_id || detailedError.requestId}`
+      : '',
+    error.message,
+  ].filter(Boolean)
+
+  return details
+    .join(', ')
+    .replace(/sk-[\w-]{8,}/gi, 'sk-***')
+    .slice(0, 600)
+}
+
+function withDetails(message: string, error: Error): string {
+  return `${message}\n${l10n.t('Error details: {0}', getErrorDetails(error))}`
+}
+
 /**
  * 分析错误类型和消息
  * @param error 原始错误对象
@@ -37,10 +67,12 @@ function analyzeError(error: unknown): ErrorInfo {
     }
   }
 
+  const detailedError = error as DetailedError
   const errorMessage = error.message.toLowerCase()
+  const status = detailedError.status
 
   // 检查中止错误
-  if (errorMessage.includes('abort')) {
+  if (error.name === 'AbortError') {
     return {
       type: ApiErrorType.ABORT,
       message: l10n.t('Request was cancelled.'),
@@ -49,28 +81,28 @@ function analyzeError(error: unknown): ErrorInfo {
   }
 
   // 检查认证错误
-  if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('invalid api key')) {
+  if (status === 401 || errorMessage.includes('unauthorized') || errorMessage.includes('invalid api key')) {
     return {
       type: ApiErrorType.AUTHENTICATION,
-      message: l10n.t('Invalid API key. Please check your configuration in settings.'),
+      message: withDetails(l10n.t('Invalid API key. Please check your configuration in settings.'), error),
       originalError: error,
     }
   }
 
   // 检查速率限制
-  if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
+  if (status === 429 || errorMessage.includes('rate limit')) {
     return {
       type: ApiErrorType.RATE_LIMIT,
-      message: l10n.t('Rate limit exceeded. Please try again later or check your API quota.'),
+      message: withDetails(l10n.t('Rate limit exceeded. Please try again later or check your API quota.'), error),
       originalError: error,
     }
   }
 
   // 检查超时错误
-  if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+  if (error.name === 'RequestTimeoutError' || errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
     return {
       type: ApiErrorType.TIMEOUT,
-      message: l10n.t('Request timeout. Please check your network connection and try again.'),
+      message: withDetails(l10n.t('Request timeout. Please check your network connection and try again.'), error),
       originalError: error,
     }
   }
@@ -79,25 +111,25 @@ function analyzeError(error: unknown): ErrorInfo {
   if (errorMessage.includes('network') || errorMessage.includes('econnrefused') || errorMessage.includes('fetch failed')) {
     return {
       type: ApiErrorType.NETWORK,
-      message: l10n.t('Network error. Please check your internet connection and base URL configuration.'),
+      message: withDetails(l10n.t('Network error. Please check your internet connection and base URL configuration.'), error),
       originalError: error,
     }
   }
 
   // 检查无效请求
-  if (errorMessage.includes('400') || errorMessage.includes('bad request') || errorMessage.includes('invalid')) {
+  if (status === 400 || errorMessage.includes('bad request') || errorMessage.includes('invalid')) {
     return {
       type: ApiErrorType.INVALID_REQUEST,
-      message: l10n.t('Invalid request. Please check your configuration or try again.'),
+      message: withDetails(l10n.t('Invalid request. Please check your configuration or try again.'), error),
       originalError: error,
     }
   }
 
   // 检查服务器错误
-  if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503') || errorMessage.includes('server error')) {
+  if ((status !== undefined && status >= 500) || errorMessage.includes('server error')) {
     return {
       type: ApiErrorType.SERVER_ERROR,
-      message: l10n.t('Server error. The API service may be temporarily unavailable. Please try again later.'),
+      message: withDetails(l10n.t('Server error. The API service may be temporarily unavailable. Please try again later.'), error),
       originalError: error,
     }
   }
@@ -105,7 +137,7 @@ function analyzeError(error: unknown): ErrorInfo {
   // 默认返回原始错误消息
   return {
     type: ApiErrorType.UNKNOWN,
-    message: error.message || l10n.t('An unexpected error occurred.'),
+    message: withDetails(l10n.t('An unexpected error occurred.'), error),
     originalError: error,
   }
 }

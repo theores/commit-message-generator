@@ -24,6 +24,10 @@ export const COMMANDS = {
   RESET_TOKEN_STATS: `${EXTENSION_ID}.resetTokenStats`,
 } as const
 
+export const CONTEXT_KEYS = {
+  GENERATING_REPOSITORY_URIS: `${EXTENSION_ID}.generatingRepositoryUris`,
+} as const
+
 /**
  * API 配置常量
  */
@@ -32,14 +36,4 @@ export const API_CONFIG = {
   DEFAULT_TIMEOUT: 60000,
   /** 默认生成温度参数（保持生成内容的严谨性） */
   DEFAULT_TEMPERATURE: 0,
-} as const
-
-/**
- * Commit 消息格式常量
- */
-export const COMMIT_FORMAT = {
-  /** subject 最大长度 */
-  MAX_SUBJECT_LENGTH: 50,
-  /** body 每行最大长度 */
-  MAX_BODY_LINE_LENGTH: 72,
 } as const

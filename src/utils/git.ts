@@ -1,7 +1,9 @@
 import type { Uri } from 'vscode'
 import * as fs from 'node:fs'
+import path from 'node:path'
 import simpleGit from 'simple-git'
-import { extensions, l10n } from 'vscode'
+import { extensions, l10n, window } from 'vscode'
+import { isPathInside, isSamePath } from './path'
 
 /**
  * VS Code Git 扩展导出的仓库接口
@@ -24,17 +26,8 @@ interface GitExtensionExports {
 /**
  * 仓库上下文接口，兼容 VS Code 传入的 SourceControl 或其它包含 rootUri 的对象
  */
-interface RepoContext {
+export interface RepoContext {
   rootUri?: Uri
-}
-
-function resolveRealPath(path: string): string {
-  try {
-    return fs.realpathSync(path)
-  }
-  catch {
-    return path
-  }
 }
 
 /**
@@ -57,14 +50,16 @@ export async function getRepo(context?: RepoContext): Promise<GitRepository> {
 
   // 如果传入了上下文且包含 rootUri，则尝试精确匹配
   if (context?.rootUri) {
-    const resourcePath = resolveRealPath(context.rootUri.fsPath)
-    const matchedRepo = gitApi.repositories.find((repo) => {
-      const repoPath = resolveRealPath(repo.rootUri.fsPath)
-      return resourcePath.startsWith(repoPath) || repoPath.startsWith(resourcePath)
-    })
+    const resourcePath = context.rootUri.fsPath
+    const exactRepo = gitApi.repositories.find(repo => isSamePath(repo.rootUri.fsPath, resourcePath))
+    if (exactRepo) {
+      return exactRepo
+    }
 
-    if (matchedRepo) {
-      return matchedRepo
+    const matchingRepos = gitApi.repositories.filter(repo => isPathInside(repo.rootUri.fsPath, resourcePath))
+
+    if (matchingRepos.length === 1) {
+      return matchingRepos[0]
     }
   }
 
@@ -73,8 +68,25 @@ export async function getRepo(context?: RepoContext): Promise<GitRepository> {
     return gitApi.repositories[0]
   }
 
-  // 兜底：返回第一个仓库（后续可在 commands 中增加 QuickPick 逻辑）
-  return gitApi.repositories[0]
+  const picked = await window.showQuickPick(
+    gitApi.repositories.map(repo => ({
+      label: path.basename(repo.rootUri.fsPath),
+      description: repo.rootUri.fsPath,
+      repo,
+    })),
+    {
+      title: l10n.t('Select Git Repository'),
+      placeHolder: l10n.t('Select the repository whose changes should be analyzed.'),
+    },
+  )
+
+  if (!picked) {
+    const error = new Error(l10n.t('Repository selection was cancelled.'))
+    error.name = 'AbortError'
+    throw error
+  }
+
+  return picked.repo
 }
 
 /**
@@ -105,12 +117,68 @@ export async function getDiffStaged(repo: GitRepository): Promise<string> {
  * @param repo Git 仓库实例
  * @returns 未暂存的 diff 内容
  */
-export async function getDiff(repo: GitRepository): Promise<string> {
+export async function getDiff(repo: GitRepository, maxLength = 100000): Promise<string> {
   const rootPath = repo.rootUri.fsPath
   const git = simpleGit(rootPath)
-  const diff = await git.diff()
+  const [diff, status] = await Promise.all([
+    git.diff(['--no-ext-diff']),
+    git.status(),
+  ])
+  const patches = [diff]
+  let remainingLength = Math.max(0, maxLength - diff.length)
 
-  return diff || ''
+  for (const relativePath of status.not_added) {
+    if (remainingLength <= 0) {
+      break
+    }
+
+    const absolutePath = path.resolve(rootPath, relativePath)
+    if (!isPathInside(rootPath, absolutePath)) {
+      continue
+    }
+
+    const patch = await createUntrackedFilePatch(absolutePath, relativePath, remainingLength)
+    if (!patch) {
+      continue
+    }
+
+    patches.push(patch)
+    remainingLength -= patch.length
+  }
+
+  return patches.filter(Boolean).join('\n')
+}
+
+async function createUntrackedFilePatch(
+  absolutePath: string,
+  relativePath: string,
+  maxLength: number,
+): Promise<string> {
+  try {
+    const stats = await fs.promises.stat(absolutePath)
+    if (!stats.isFile()) {
+      return ''
+    }
+
+    const normalizedPath = relativePath.replaceAll('\\', '/')
+    const header = `diff --git a/${normalizedPath} b/${normalizedPath}\nnew file mode 100644\n--- /dev/null\n+++ b/${normalizedPath}\n`
+    const availableLength = Math.max(0, Math.min(20000, maxLength - header.length))
+
+    if (stats.size > availableLength) {
+      return `${header}@@\n+[Untracked file content omitted because the file is too large.]`
+    }
+
+    const content = await fs.promises.readFile(absolutePath)
+    if (content.includes(0)) {
+      return `${header}Binary files differ`
+    }
+
+    const lines = content.toString('utf8').split('\n').map(line => `+${line}`).join('\n')
+    return `${header}@@ -0,0 +1 @@\n${lines}`
+  }
+  catch {
+    return ''
+  }
 }
 
 /**
@@ -127,8 +195,10 @@ export async function checkConflicts(repo: GitRepository): Promise<string | null
     return l10n.t('There are unresolved conflicts. Please resolve them first.')
   }
 
-  // 检查是否在合并中（通常通过 .git/MERGE_HEAD 存在与否判断，或者 status 包含相关信息）
-  const mergeHeadPath = `${rootPath}/.git/MERGE_HEAD`
+  const rawMergeHeadPath = (await git.raw(['rev-parse', '--git-path', 'MERGE_HEAD'])).trim()
+  const mergeHeadPath = path.isAbsolute(rawMergeHeadPath)
+    ? rawMergeHeadPath
+    : path.resolve(rootPath, rawMergeHeadPath)
   if (fs.existsSync(mergeHeadPath)) {
     return l10n.t('Merge in progress. Please finish the merge before generating a commit message.')
   }

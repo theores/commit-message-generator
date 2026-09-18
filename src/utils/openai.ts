@@ -25,6 +25,74 @@ export interface TokenUsage {
   cachedTokens?: number
 }
 
+interface CompatibleUsage {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  prompt_cache_hit_tokens?: number
+  prompt_tokens_details?: {
+    cached_tokens?: number
+  }
+}
+
+export class RequestTimeoutError extends Error {
+  constructor(timeout: number) {
+    super(`Request timed out after ${timeout} ms.`)
+    this.name = 'RequestTimeoutError'
+  }
+}
+
+function createAbortContext(signal: AbortSignal | undefined, timeout: number) {
+  const controller = new AbortController()
+  let timedOut = false
+
+  const abortFromCaller = () => controller.abort(signal?.reason)
+  if (signal?.aborted) {
+    abortFromCaller()
+  }
+  else {
+    signal?.addEventListener('abort', abortFromCaller, { once: true })
+  }
+
+  const timeoutId = setTimeout(() => {
+    if (!controller.signal.aborted) {
+      timedOut = true
+      controller.abort()
+    }
+  }, timeout)
+
+  return {
+    signal: controller.signal,
+    throwIfAborted() {
+      if (!controller.signal.aborted) {
+        return
+      }
+      if (timedOut) {
+        throw new RequestTimeoutError(timeout)
+      }
+
+      const error = new Error('Request was aborted.')
+      error.name = 'AbortError'
+      throw error
+    },
+    dispose() {
+      clearTimeout(timeoutId)
+      signal?.removeEventListener('abort', abortFromCaller)
+    },
+  }
+}
+
+function normalizeUsage(rawUsage: CompatibleUsage): TokenUsage {
+  return {
+    promptTokens: rawUsage.prompt_tokens || 0,
+    completionTokens: rawUsage.completion_tokens || 0,
+    totalTokens: rawUsage.total_tokens || 0,
+    cachedTokens: rawUsage.prompt_tokens_details?.cached_tokens
+      || rawUsage.prompt_cache_hit_tokens
+      || 0,
+  }
+}
+
 /**
  * 调用 ChatGPT 流式 API
  * @param messages 聊天消息数组
@@ -43,31 +111,24 @@ export async function ChatGPTStreamAPI(
   const { model } = config.getServiceConfig()
   const temperature = API_CONFIG.DEFAULT_TEMPERATURE
 
-  // 创建超时控制器
-  const timeoutController = new AbortController()
-  const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
-
-  if (signal) {
-    signal.addEventListener('abort', () => timeoutController.abort(), { once: true })
-  }
+  const abortContext = createAbortContext(signal, timeout)
 
   try {
+    abortContext.throwIfAborted()
     const stream = await openai.chat.completions.create({
       model,
       messages: messages as ChatCompletionMessageParam[],
       temperature,
       stream: true,
       stream_options: { include_usage: true },
-    }, { signal: timeoutController.signal })
+    }, { signal: abortContext.signal })
 
     let fullContent = ''
     let usage: TokenUsage | undefined
 
     try {
       for await (const chunk of stream) {
-        if (timeoutController.signal.aborted) {
-          break
-        }
+        abortContext.throwIfAborted()
         const content = chunk.choices[0]?.delta?.content || ''
         if (content) {
           fullContent += content
@@ -75,87 +136,42 @@ export async function ChatGPTStreamAPI(
         }
 
         if (chunk.usage) {
-          const rawUsage = chunk.usage as any
-          usage = {
-            promptTokens: rawUsage.prompt_tokens || 0,
-            completionTokens: rawUsage.completion_tokens || 0,
-            totalTokens: rawUsage.total_tokens || 0,
-            cachedTokens: rawUsage.prompt_tokens_details?.cached_tokens
-              || rawUsage.prompt_cache_hit_tokens
-              || 0,
-          }
+          usage = normalizeUsage(chunk.usage as CompatibleUsage)
         }
       }
     }
     catch (error) {
-      if (timeoutController.signal.aborted) {
-        return { content: fullContent, usage }
-      }
+      abortContext.throwIfAborted()
       throw error
     }
 
     return { content: fullContent, usage }
   }
   finally {
-    clearTimeout(timeoutId)
-  }
-}
-
-/**
- * 调用 ChatGPT 非流式 API
- */
-export async function ChatGPTAPI(
-  messages: ChatCompletionMessageParam[],
-  options: { signal?: AbortSignal, timeout?: number } = {},
-): Promise<{ content: string, usage?: TokenUsage }> {
-  const { signal, timeout = API_CONFIG.DEFAULT_TIMEOUT } = options
-  const openai = createOpenAIApi()
-  const { model } = config.getServiceConfig()
-  const temperature = API_CONFIG.DEFAULT_TEMPERATURE
-
-  const timeoutController = new AbortController()
-  const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
-
-  if (signal) {
-    signal.addEventListener('abort', () => timeoutController.abort(), { once: true })
-  }
-
-  try {
-    const response = await openai.chat.completions.create({
-      model,
-      messages: messages as ChatCompletionMessageParam[],
-      temperature,
-      stream: false,
-    }, { signal: timeoutController.signal })
-
-    let usage: TokenUsage | undefined
-    if (response.usage) {
-      const rawUsage = response.usage as any
-      usage = {
-        promptTokens: rawUsage.prompt_tokens || 0,
-        completionTokens: rawUsage.completion_tokens || 0,
-        totalTokens: rawUsage.total_tokens || 0,
-        cachedTokens: rawUsage.prompt_tokens_details?.cached_tokens
-          || rawUsage.prompt_cache_hit_tokens
-          || 0,
-      }
-    }
-
-    return {
-      content: response.choices[0]?.message?.content || '',
-      usage,
-    }
-  }
-  finally {
-    clearTimeout(timeoutId)
+    abortContext.dispose()
   }
 }
 
 /**
  * 获取可用的模型列表
  */
-export async function getAvailableModels() {
+export async function getAvailableModels(
+  options: { signal?: AbortSignal, timeout?: number } = {},
+) {
   const openai = createOpenAIApi()
-  const models = await openai.models.list()
-  return models.data.map(model => model.id)
+  const { signal, timeout = API_CONFIG.DEFAULT_TIMEOUT } = options
+  const abortContext = createAbortContext(signal, timeout)
+
+  try {
+    abortContext.throwIfAborted()
+    const models = await openai.models.list({ signal: abortContext.signal })
+    return models.data.map(model => model.id)
+  }
+  catch (error) {
+    abortContext.throwIfAborted()
+    throw error
+  }
+  finally {
+    abortContext.dispose()
+  }
 }

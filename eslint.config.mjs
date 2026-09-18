@@ -7,4 +7,9 @@ export default antfu({
     'out/**',
     'LATEST_CHANGELOG.md',
   ],
+  overrides: {
+    test: {
+      'test/no-import-node-test': 'off',
+    },
+  },
 })

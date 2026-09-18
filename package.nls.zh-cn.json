@@ -8,7 +8,9 @@
   "configuration.service.baseURL.description": "AI 服务 API 端点的基础 URL。\n\n例如：https://api.deepseek.com",
   "configuration.service.model.description": "用于生成提交信息的 AI 模型。[浏览当前所有可用模型](command:commit-message-generator.selectAvailableModel)",
   "configuration.format.outputLanguage.description": "所有 AI 生成内容的语言。",
+  "configuration.ui.showProgress.description": "生成提交信息时显示可取消的进度通知。",
   "configuration.commit.autoStage.description": "在生成提交日志前，自动暂存所有更改 (git add .)。",
   "configuration.commit.template.description": "自定义提交日志模板。如果为空，将使用默认的 [Conventional Commits](https://www.conventionalcommits.org/) 规范。\n\n例如：{type}({scope}): {subject}",
-  "configuration.commit.customPrompt.description": "额外的提交日志生成指令，用于自定义复杂的规范或约束。\n\n例如：强制包含 Jira 编号、使用特定的提交格式、遵循团队规范等"
+  "configuration.commit.customPrompt.description": "额外的提交日志生成指令，用于自定义复杂的规范或约束。\n\n例如：强制包含 Jira 编号、使用特定的提交格式、遵循团队规范等",
+  "configuration.commit.maxDiffLength.description": "发送给 AI 服务的 Git Diff 最大字符数。较小的值通常生成更快并消耗更少 Token。"
 }

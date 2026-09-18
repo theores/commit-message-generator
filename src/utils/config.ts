@@ -17,6 +17,10 @@ export interface FormatConfig {
   outputLanguage: string
 }
 
+export interface UiConfig {
+  showProgress: boolean
+}
+
 /**
  * 提交消息配置接口
  */
@@ -27,6 +31,8 @@ export interface CommitConfig {
   template: string
   /** 额外的自定义生成提示语 */
   customPrompt: string
+  /** 发送给模型的最大 Diff 字符数 */
+  maxDiffLength: number
 }
 
 class ConfigManager {
@@ -76,6 +82,12 @@ class ConfigManager {
     }
   }
 
+  getUiConfig(): UiConfig {
+    return {
+      showProgress: this.get<boolean>('ui.showProgress', true),
+    }
+  }
+
   /**
    * 获取提交消息相关配置
    */
@@ -84,6 +96,7 @@ class ConfigManager {
       autoStage: this.get<boolean>('commit.autoStage', false),
       template: this.get<string>('commit.template', ''),
       customPrompt: this.get<string>('commit.customPrompt', ''),
+      maxDiffLength: this.get<number>('commit.maxDiffLength', 50000),
     }
   }
 }

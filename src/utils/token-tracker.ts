@@ -60,6 +60,7 @@ class TokenTracker {
   private totalCachedTokens = 0
   private operationCount = 0
   private context: ExtensionContext | null = null
+  private saveQueue: Promise<void> = Promise.resolve()
 
   /**
    * 初始化状态栏并加载持久化数据
@@ -149,7 +150,10 @@ class TokenTracker {
         lastUsage: this.lastUsage,
       }
 
-      await this.context.globalState.update(STORAGE_KEY, data)
+      this.saveQueue = this.saveQueue
+        .catch(() => {})
+        .then(() => this.context!.globalState.update(STORAGE_KEY, data))
+      await this.saveQueue
       logger.debug('Saved token tracker data', {
         totalTokens: this.totalTokens,
         operationCount: this.operationCount,

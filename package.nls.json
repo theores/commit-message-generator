@@ -8,7 +8,9 @@
   "configuration.service.baseURL.description": "Base URL of the AI service API endpoint.\n\neg: https://api.deepseek.com",
   "configuration.service.model.description": "AI model for generating commit messages. [Browse all available models](command:commit-message-generator.selectAvailableModel)",
   "configuration.format.outputLanguage.description": "Language for all AI-generated content.",
+  "configuration.ui.showProgress.description": "Show a cancellable progress notification while generating a commit message.",
   "configuration.commit.autoStage.description": "Automatically stage all changes (git add .) before generating messages.",
   "configuration.commit.template.description": "Custom template for the commit message. If empty, the default [Conventional Commits](https://www.conventionalcommits.org/) format will be used.\n\neg: {type}({scope}): {subject}",
-  "configuration.commit.customPrompt.description": "Additional generation instructions for custom commit conventions or constraints.\n\neg: enforce Jira ticket numbers, use specific format, follow team conventions"
+  "configuration.commit.customPrompt.description": "Additional generation instructions for custom commit conventions or constraints.\n\neg: enforce Jira ticket numbers, use specific format, follow team conventions",
+  "configuration.commit.maxDiffLength.description": "Maximum number of Git diff characters sent to the AI service. Smaller values usually generate faster and use fewer tokens."
 }

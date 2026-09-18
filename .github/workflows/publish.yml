@@ -2,8 +2,8 @@ name: Publish Extension
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -24,21 +24,11 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           
-          # 检查当前版本号是否已经有对应的 Git Tag
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "Tag v$VERSION already exists."
-            TAG_EXISTS=true
-          else
-            echo "Tag v$VERSION does not exist."
-            TAG_EXISTS=false
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref_name }}" != "v$VERSION" ]; then
+            echo "Tag ${{ github.ref_name }} does not match package version v$VERSION."
+            exit 1
           fi
-
-          # 逻辑：如果是手动触发 OR 标签不存在 (说明是新版本)
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "$TAG_EXISTS" == "false" ]; then
-            echo "publish=true" >> $GITHUB_OUTPUT
-          else
-            echo "publish=false" >> $GITHUB_OUTPUT
-          fi
+          echo "publish=true" >> $GITHUB_OUTPUT
 
       - name: Install pnpm
         if: steps.prep.outputs.publish == 'true'
@@ -53,15 +43,31 @@ jobs:
 
       - name: Install dependencies
         if: steps.prep.outputs.publish == 'true'
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Generate Changelog
+      - name: Quality checks
+        if: steps.prep.outputs.publish == 'true'
+        run: |
+          pnpm run check-types
+          pnpm run lint
+          pnpm run test
+
+      - name: Prepare release notes
         if: steps.prep.outputs.publish == 'true'
         id: changelog
         run: |
-          # 使用 conventional-changelog 生成当前版本的增量日志
-          pnpm exec conventional-changelog -p angular -r 1 > LATEST_CHANGELOG.md
-          # 输出到 GitHub Step Output
+          VERSION="${{ steps.prep.outputs.version }}"
+          if ! grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "CHANGELOG.md does not contain an entry for version $VERSION."
+            exit 1
+          fi
+
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { found=1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > LATEST_CHANGELOG.md
+
           {
             echo 'body<<EOF'
             cat LATEST_CHANGELOG.md
@@ -71,8 +77,8 @@ jobs:
       - name: Compile and Package
         if: steps.prep.outputs.publish == 'true'
         run: |
-          pnpm run compile
-          npx vsce package -o extension.vsix
+          pnpm run package
+          pnpm exec vsce package -o extension.vsix
 
       - name: Create Release
         if: steps.prep.outputs.publish == 'true'
@@ -89,7 +95,7 @@ jobs:
 
       - name: Publish to VS Marketplace
         if: steps.prep.outputs.publish == 'true'
-        run: npx vsce publish --packagePath extension.vsix -p ${{ secrets.VSCE_PAT }}
+        run: pnpm exec vsce publish --packagePath extension.vsix -p "$VSCE_PAT"
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 

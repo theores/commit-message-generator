@@ -37,5 +37,18 @@
   "No changes to commit.": "No changes to commit.",
   "Copy": "Copy",
   "OK": "OK",
-  "Statistics copied to clipboard": "Statistics copied to clipboard"
+  "Statistics copied to clipboard": "Statistics copied to clipboard",
+  "Select Git Repository": "Select Git Repository",
+  "Select the repository whose changes should be analyzed.": "Select the repository whose changes should be analyzed.",
+  "Repository selection was cancelled.": "Repository selection was cancelled.",
+  "The diff was truncated to {0} characters to improve speed and avoid exceeding the model context limit.": "The diff was truncated to {0} characters to improve speed and avoid exceeding the model context limit.",
+  "Error details: {0}": "Error details: {0}",
+  "Generating commit message": "Generating commit message",
+  "Preparing generation...": "Preparing generation...",
+  "Checking Git repository...": "Checking Git repository...",
+  "Collecting code changes...": "Collecting code changes...",
+  "Preparing AI request...": "Preparing AI request...",
+  "Waiting for AI service...": "Waiting for AI service...",
+  "Generating commit message...": "Generating commit message...",
+  "Generation complete": "Generation complete"
 }

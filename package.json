@@ -2,7 +2,7 @@
   "publisher": "theores",
   "name": "commit-message-generator-ai",
   "displayName": "Commit Message Generator (AI)",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "packageManager": "pnpm@10.17.1",
   "description": "AI-powered git commit message generator",
   "l10n": "./l10n",
@@ -48,9 +48,6 @@
   "engines": {
     "vscode": "^1.75.0"
   },
-  "activationEvents": [
-    "onStartupFinished"
-  ],
   "contributes": {
     "commands": [
       {
@@ -129,6 +126,12 @@
           "type": "string",
           "order": 10
         },
+        "commit-message-generator.ui.showProgress": {
+          "default": true,
+          "markdownDescription": "%configuration.ui.showProgress.description%",
+          "type": "boolean",
+          "order": 20
+        },
         "commit-message-generator.commit.autoStage": {
           "default": false,
           "markdownDescription": "%configuration.commit.autoStage.description%",
@@ -148,6 +151,14 @@
           "type": "string",
           "editPresentation": "multilineText",
           "order": 31
+        },
+        "commit-message-generator.commit.maxDiffLength": {
+          "default": 50000,
+          "markdownDescription": "%configuration.commit.maxDiffLength.description%",
+          "type": "number",
+          "minimum": 10000,
+          "maximum": 1000000,
+          "order": 32
         }
       }
     },
@@ -156,12 +167,12 @@
         {
           "command": "commit-message-generator.generateCommit",
           "group": "navigation@1",
-          "when": "scmProvider === git && !commit-message-generator.isGenerating"
+          "when": "scmProvider == git && scmProviderRootUri not in commit-message-generator.generatingRepositoryUris"
         },
         {
           "command": "commit-message-generator.stopGeneration",
           "group": "navigation@1",
-          "when": "scmProvider === git && commit-message-generator.isGenerating"
+          "when": "scmProvider == git && scmProviderRootUri in commit-message-generator.generatingRepositoryUris"
         }
       ]
     }
@@ -176,6 +187,7 @@
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
+    "test": "tsx --test tests/*.test.ts",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "ext:package": "vsce package",
     "ext:publish": "vsce publish",
@@ -188,6 +200,7 @@
     "@types/vscode": "^1.75.0",
     "@vscode/l10n-dev": "^0.0.35",
     "@vscode/vsce": "^3.6.2",
+    "baseline-browser-mapping": "^2.11.25",
     "bumpp": "^10.2.3",
     "conventional-changelog-cli": "^5.0.0",
     "esbuild": "^0.25.10",
@@ -196,6 +209,7 @@
     "openai": "^6.1.0",
     "ovsx": "^0.10.11",
     "simple-git": "^3.28.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.3"
   }
 }
